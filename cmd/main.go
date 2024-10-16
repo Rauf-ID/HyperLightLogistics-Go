@@ -1,7 +1,7 @@
 package main
 
 import (
-	proto "HyperLightLogistics-Go/pkg/service"
+	proto "HyperLightLogistics-Go/internal/service"
 	"context"
 	"log"
 	"net"
