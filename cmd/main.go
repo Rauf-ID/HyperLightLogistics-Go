@@ -1,7 +1,10 @@
 package main
 
 import (
-	proto "HyperLightLogistics-Go/internal/service"
+	"HyperLightLogistics-Go/internal/config"
+	"HyperLightLogistics-Go/internal/db"
+	"HyperLightLogistics-Go/internal/service"
+	proto "HyperLightLogistics-Go/internal/service/proto"
 	"context"
 	"log"
 	"net"
@@ -11,9 +14,20 @@ import (
 
 type DeliveryOptionsServer struct {
 	proto.UnimplementedDeliveryOptionsServiceServer
+	InventoryService *service.InventoryService
 }
 
-func (s DeliveryOptionsServer) CalculateDeliveryOptions(context.Context, *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
+func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
+	productId := req.Products[0].ProductId
+
+	warehouses, err := s.InventoryService.GetWarehousesForProduct(productId)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, warehouse := range warehouses {
+		log.Printf("Found warehouse: %s with quantity: %d", warehouse.WarehouseID, warehouse.Quantity)
+	}
 
 	deliveryOptions := calculateDeliveryRoutes()
 
@@ -41,13 +55,26 @@ func calculateDeliveryRoutes() []*proto.DeliveryOptions {
 }
 
 func main() {
+	cfg, err := config.LoadConfig("../config.yaml")
+	if err != nil {
+		log.Fatalf("Error loading config: %s", err)
+	}
+
+	db, err := db.NewPostgresDB(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %s", err)
+	}
+	defer db.Close()
+
+	inventoryService := service.NewInventoryService(db)
+
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
 		log.Fatalf("cannot create listener: %s", err)
 	}
 
 	serverRegistrar := grpc.NewServer()
-	service := &DeliveryOptionsServer{}
+	service := &DeliveryOptionsServer{InventoryService: inventoryService}
 	proto.RegisterDeliveryOptionsServiceServer(serverRegistrar, service)
 
 	err = serverRegistrar.Serve(lis)
