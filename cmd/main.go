@@ -18,15 +18,17 @@ type DeliveryOptionsServer struct {
 }
 
 func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
-	productId := req.Products[0].ProductId
+	for _, product := range req.Products {
+		productId := product.ProductId
 
-	warehouses, err := s.InventoryService.GetWarehousesForProduct(productId)
-	if err != nil {
-		return nil, err
-	}
+		warehouses, err := s.InventoryService.GetWarehousesForProduct(productId)
+		if err != nil {
+			return nil, err
+		}
 
-	for _, warehouse := range warehouses {
-		log.Printf("Found warehouse: %s with quantity: %d", warehouse.WarehouseID, warehouse.Quantity)
+		for _, warehouse := range warehouses {
+			log.Printf("Found warehouse: %s with quantity: %d", warehouse.WarehouseID, warehouse.Quantity)
+		}
 	}
 
 	deliveryOptions := calculateDeliveryRoutes()
