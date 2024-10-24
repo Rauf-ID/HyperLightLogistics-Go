@@ -10,6 +10,7 @@ type InventoryItem struct {
 	ProductID   int64
 	WarehouseID int64
 	Quantity    int64
+	Location    string
 }
 
 type InventoryService struct {
@@ -21,7 +22,11 @@ func NewInventoryService(db *db.PostgresDB) *InventoryService {
 }
 
 func (s *InventoryService) GetWarehousesForProduct(productId int64) ([]InventoryItem, error) {
-	query := `SELECT product_id, warehouse_id, quantity FROM inventory WHERE product_id = $1`
+	query := `
+			SELECT i.product_id, i.warehouse_id, i.quantity, w.location 
+			FROM inventory as i, warehouses as w
+			WHERE w.id = i.warehouse_id and i.product_id = $1
+	`
 
 	rows, err := s.DB.Conn.Query(context.Background(), query, productId)
 	if err != nil {
@@ -33,7 +38,7 @@ func (s *InventoryService) GetWarehousesForProduct(productId int64) ([]Inventory
 
 	for rows.Next() {
 		var item InventoryItem
-		err := rows.Scan(&item.ProductID, &item.WarehouseID, &item.Quantity)
+		err := rows.Scan(&item.ProductID, &item.WarehouseID, &item.Quantity, &item.Location)
 		if err != nil {
 			log.Println("Error scanning row:", err)
 			continue
