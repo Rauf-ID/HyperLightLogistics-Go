@@ -27,8 +27,8 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 		}
 
 		for _, warehouse := range warehouses {
-			log.Printf("For product: %d warehouse was found: %d with quantity: %d warehouse location: %s",
-				warehouse.ProductID, warehouse.WarehouseID, warehouse.Quantity, warehouse.Location)
+			log.Printf("For product: %d warehouse was found: %d with quantity: %d warehouse location: %s latitude: %f longitude: %f",
+				warehouse.ProductID, warehouse.WarehouseID, warehouse.Quantity, warehouse.Location, warehouse.Latitude, warehouse.Longitude)
 		}
 	}
 
