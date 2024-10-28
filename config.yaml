@@ -4,3 +4,6 @@ database:
   user: "postgres"
   password: "pass"
   dbname: "hyperlightlogistics"
+
+openrouteservice:
+  api_key: "your_api_key"

@@ -14,8 +14,13 @@ type DatabaseConfig struct {
 	DBName   string `yaml:"dbname"`
 }
 
+type OpenRouteServiceConfig struct {
+	OpenRouteServiceAPIKey string `yaml:"api_key"`
+}
+
 type Config struct {
-	Database DatabaseConfig `yaml:"database"`
+	Database         DatabaseConfig         `yaml:"database"`
+	OpenRouteService OpenRouteServiceConfig `yaml:"openrouteservice"`
 }
 
 func LoadConfig(path string) (*Config, error) {
