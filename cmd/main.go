@@ -15,6 +15,7 @@ import (
 type DeliveryOptionsServer struct {
 	proto.UnimplementedDeliveryOptionsServiceServer
 	InventoryService *service.InventoryService
+	RouteService     *service.RouteService
 }
 
 func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
@@ -30,6 +31,15 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 			log.Printf("For product: %d warehouse was found: %d with quantity: %d warehouse location: %s latitude: %f longitude: %f",
 				warehouse.ProductID, warehouse.WarehouseID, warehouse.Quantity, warehouse.Location, warehouse.Latitude, warehouse.Longitude)
 		}
+
+		closestWarehouse, distance, err := s.RouteService.CalculateDistance(8.687872, 49.420318, warehouses)
+		if err != nil {
+			return nil, err
+		}
+
+		_ = closestWarehouse
+		_ = distance
+
 	}
 
 	deliveryOptions := calculateDeliveryRoutes()
@@ -70,6 +80,7 @@ func main() {
 	defer db.Close()
 
 	inventoryService := service.NewInventoryService(db)
+	routeService := service.NewRouteService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -77,7 +88,10 @@ func main() {
 	}
 
 	serverRegistrar := grpc.NewServer()
-	service := &DeliveryOptionsServer{InventoryService: inventoryService}
+	service := &DeliveryOptionsServer{
+		InventoryService: inventoryService,
+		RouteService:     routeService,
+	}
 	proto.RegisterDeliveryOptionsServiceServer(serverRegistrar, service)
 
 	err = serverRegistrar.Serve(lis)
