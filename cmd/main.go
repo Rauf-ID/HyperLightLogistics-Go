@@ -22,6 +22,9 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 	for _, product := range req.Products {
 		productId := product.ProductId
 
+		var clientLon float32 = -122.1749130962329
+		var clientLat float32 = 47.35301762921005
+
 		warehouses, err := s.InventoryService.GetWarehousesForProduct(productId)
 		if err != nil {
 			return nil, err
@@ -32,7 +35,7 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 				warehouse.ProductID, warehouse.WarehouseID, warehouse.Quantity, warehouse.Location, warehouse.Latitude, warehouse.Longitude)
 		}
 
-		closestWarehouse, distance, err := s.RouteService.CalculateDistance(8.687872, 49.420318, warehouses)
+		closestWarehouse, distance, err := s.RouteService.CalculateDistance(clientLon, clientLat, warehouses)
 		if err != nil {
 			return nil, err
 		}
