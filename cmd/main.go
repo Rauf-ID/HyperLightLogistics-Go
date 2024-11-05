@@ -6,6 +6,7 @@ import (
 	"HyperLightLogistics-Go/internal/service"
 	proto "HyperLightLogistics-Go/internal/service/proto"
 	"context"
+	"fmt"
 	"log"
 	"net"
 
@@ -16,14 +17,20 @@ type DeliveryOptionsServer struct {
 	proto.UnimplementedDeliveryOptionsServiceServer
 	InventoryService *service.InventoryService
 	RouteService     *service.RouteService
+	GeocodingService *service.GeocodingService
 }
 
 func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
+
+	clientLon, clientLat, err := s.GeocodingService.GetCoordinates(req.DeliveryAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coordinates: %v", err)
+	}
+
+	log.Println(clientLat, clientLon)
+
 	for _, product := range req.Products {
 		productId := product.ProductId
-
-		var clientLon float32 = -122.1749130962329
-		var clientLat float32 = 47.35301762921005
 
 		warehouses, err := s.InventoryService.GetWarehousesForProduct(productId)
 		if err != nil {
@@ -84,6 +91,7 @@ func main() {
 
 	inventoryService := service.NewInventoryService(db)
 	routeService := service.NewRouteService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
+	geocodingService := service.NewGeocodingService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -94,6 +102,7 @@ func main() {
 	service := &DeliveryOptionsServer{
 		InventoryService: inventoryService,
 		RouteService:     routeService,
+		GeocodingService: geocodingService,
 	}
 	proto.RegisterDeliveryOptionsServiceServer(serverRegistrar, service)
 
