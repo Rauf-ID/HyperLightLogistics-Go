@@ -23,7 +23,7 @@ func NewInventoryService(db *db.PostgresDB) *InventoryService {
 	return &InventoryService{DB: db}
 }
 
-func (s *InventoryService) GetWarehousesForProduct(productId int64) ([]InventoryItem, error) {
+func (s *InventoryService) GetWarehousesForProduct(productId uint64) ([]InventoryItem, error) {
 	query := `
 			SELECT i.product_id, i.warehouse_id, i.quantity, w.location, w.latitude, w.longitude
 			FROM inventory as i, warehouses as w
