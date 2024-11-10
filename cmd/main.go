@@ -37,6 +37,7 @@ type DeliveryOptionsServer struct {
 	InventoryService *service.InventoryService
 	RouteService     *service.RouteService
 	GeocodingService *service.GeocodingService
+	TransportService *service.TransportService
 }
 
 func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
@@ -111,6 +112,7 @@ func main() {
 	inventoryService := service.NewInventoryService(db)
 	routeService := service.NewRouteService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 	geocodingService := service.NewGeocodingService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
+	transportService := service.NewTransportService()
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -122,6 +124,7 @@ func main() {
 		InventoryService: inventoryService,
 		RouteService:     routeService,
 		GeocodingService: geocodingService,
+		TransportService: transportService,
 	}
 	proto.RegisterDeliveryOptionsServiceServer(serverRegistrar, service)
 
