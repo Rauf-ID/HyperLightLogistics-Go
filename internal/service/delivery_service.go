@@ -19,9 +19,9 @@
 
 package service
 
-type TransportService struct {
+type DeliveryService struct {
 }
 
-func NewTransportService() *TransportService {
-	return &TransportService{}
+func NewDeliveryService() *DeliveryService {
+	return &DeliveryService{}
 }
