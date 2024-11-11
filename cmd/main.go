@@ -52,21 +52,20 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 	for _, product := range req.Products {
 		productId := product.ProductId
 
-		warehouses, err := s.InventoryService.GetWarehousesForProduct(productId)
+		warehouses, err := s.InventoryService.GetWarehousesInfoByProduct(productId)
 		if err != nil {
 			return nil, err
 		}
 
 		for _, warehouse := range warehouses {
-			log.Printf("For product: %d warehouse was found: %d with quantity: %d warehouse location: %s latitude: %f longitude: %f",
-				warehouse.ProductID, warehouse.WarehouseID, warehouse.Quantity, warehouse.Location, warehouse.Latitude, warehouse.Longitude)
+			log.Printf("Warehouse was found: %d with quantity: %d warehouse location: %s latitude: %f longitude: %f",
+				warehouse.WarehouseID, warehouse.Quantity, warehouse.Location, warehouse.Latitude, warehouse.Longitude)
 		}
 
 		closestWarehouse, distance, err := s.RouteService.CalculateDistance(clientLon, clientLat, warehouses)
 		if err != nil {
 			return nil, err
 		}
-
 		_ = closestWarehouse
 		_ = distance
 

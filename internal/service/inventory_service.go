@@ -25,13 +25,20 @@ import (
 	"log"
 )
 
-type InventoryItem struct {
-	ProductID   int64
+type WarehouseInfo struct {
 	WarehouseID int64
 	Quantity    int64
 	Location    string
 	Latitude    float32
 	Longitude   float32
+}
+
+type ProductInfo struct {
+	ProductID int64
+	Height    float32
+	Length    float32
+	Width     float32
+	Weight    float32
 }
 
 type InventoryService struct {
@@ -42,11 +49,11 @@ func NewInventoryService(db *db.PostgresDB) *InventoryService {
 	return &InventoryService{DB: db}
 }
 
-func (s *InventoryService) GetWarehousesForProduct(productId uint64) ([]InventoryItem, error) {
+func (s *InventoryService) GetWarehousesInfoByProduct(productId uint64) ([]WarehouseInfo, error) {
 	query := `
-			SELECT i.product_id, i.warehouse_id, i.quantity, w.location, w.latitude, w.longitude
-			FROM inventory as i, warehouses as w
-			WHERE w.id = i.warehouse_id and i.product_id = $1
+		SELECT i.warehouse_id, i.quantity, w.location, w.latitude, w.longitude
+		FROM inventory as i, warehouses as w
+		WHERE w.id = i.warehouse_id and i.product_id = $1
 	`
 
 	rows, err := s.DB.Conn.Query(context.Background(), query, productId)
@@ -55,11 +62,13 @@ func (s *InventoryService) GetWarehousesForProduct(productId uint64) ([]Inventor
 	}
 	defer rows.Close()
 
-	var inventoryItems []InventoryItem
+	var inventoryItems []WarehouseInfo
 
 	for rows.Next() {
-		var item InventoryItem
-		err := rows.Scan(&item.ProductID, &item.WarehouseID, &item.Quantity, &item.Location, &item.Latitude, &item.Longitude)
+		var item WarehouseInfo
+		err := rows.Scan(
+			&item.WarehouseID, &item.Quantity,
+			&item.Location, &item.Latitude, &item.Longitude)
 		if err != nil {
 			log.Println("Error scanning row:", err)
 			continue
@@ -68,4 +77,22 @@ func (s *InventoryService) GetWarehousesForProduct(productId uint64) ([]Inventor
 	}
 
 	return inventoryItems, nil
+}
+
+func (s *InventoryService) GetProductInfo(productId uint64) (*ProductInfo, error) {
+	query := `
+		SELECT id, height, length, width, weight 
+		FROM products 
+		WHERE id = $1
+	`
+
+	row := s.DB.Conn.QueryRow(context.Background(), query, productId)
+
+	var product ProductInfo
+	err := row.Scan(&product.ProductID, &product.Height, &product.Length, &product.Weight)
+	if err != nil {
+		return nil, err
+	}
+
+	return &product, nil
 }

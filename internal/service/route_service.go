@@ -44,7 +44,7 @@ func NewRouteService(apiKey string) *RouteService {
 	}
 }
 
-func (r *RouteService) CalculateDistance(clientLon, clientLat float32, warehouses []InventoryItem) (*InventoryItem, float64, error) {
+func (r *RouteService) CalculateDistance(clientLon, clientLat float32, warehouses []WarehouseInfo) (*WarehouseInfo, float64, error) {
 	if len(warehouses) == 0 {
 		return nil, 0, errors.New("no warehouses provided")
 	}
@@ -54,7 +54,7 @@ func (r *RouteService) CalculateDistance(clientLon, clientLat float32, warehouse
 			calculateEuclideanDistance(clientLon, clientLat, warehouses[j].Longitude, warehouses[j].Latitude)
 	})
 
-	var closestWarehouse *InventoryItem
+	var closestWarehouse *WarehouseInfo
 	minDistance := math.MaxFloat64
 
 	for _, warehouse := range warehouses {
