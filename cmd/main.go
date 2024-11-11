@@ -24,6 +24,7 @@ import (
 	"HyperLightLogistics-Go/internal/db"
 	"HyperLightLogistics-Go/internal/service"
 	proto "HyperLightLogistics-Go/internal/service/proto"
+	"HyperLightLogistics-Go/internal/service/transport"
 	"context"
 	"fmt"
 	"log"
@@ -67,7 +68,13 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 			return nil, err
 		}
 		_ = closestWarehouse
-		_ = distance
+
+		productInfo, err := s.InventoryService.GetProductInfo(productId)
+		if err != nil {
+			return nil, err
+		}
+
+		s.DeliveryService.GetAvailableDeliveryOptions(distance, productInfo)
 
 	}
 
@@ -111,7 +118,8 @@ func main() {
 	inventoryService := service.NewInventoryService(db)
 	routeService := service.NewRouteService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 	geocodingService := service.NewGeocodingService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
-	deliveryService := service.NewDeliveryService()
+	droneService := transport.NewDroneService()
+	deliveryService := service.NewDeliveryService(droneService)
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

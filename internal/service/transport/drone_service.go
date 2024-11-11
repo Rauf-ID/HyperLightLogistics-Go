@@ -17,28 +17,20 @@
  * Copyright (C) 2024 Rauf Agaguliev
  */
 
-package service
+package transport
 
-import "HyperLightLogistics-Go/internal/service/transport"
+import "errors"
 
-type DeliveryService struct {
-	DroneService *transport.DroneService
+type DroneService struct {
 }
 
-type DeliveryOption struct {
-	Type         string
-	DeliveryTime string
-	Price        float64
+func NewDroneService() *DroneService {
+	return &DroneService{}
 }
 
-func NewDeliveryService(droneService *transport.DroneService) *DeliveryService {
-	return &DeliveryService{
-		DroneService: droneService,
+func (d *DroneService) CheckDroneAvailability(distance float64, height, length, width, weight float32) (bool, error) {
+	if distance >= 16000 || height > 5.0 || length > 5.0 || width > 5.0 || weight > 10.0 {
+		return false, errors.New("product exceeds allowable drone limits for distance, size, or weight")
 	}
-}
-
-func (d *DeliveryService) GetAvailableDeliveryOptions(distance float64, productInfo *ProductInfo) ([]DeliveryOption, error) {
-	d.DroneService.CheckDroneAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
-
-	return nil, nil
+	return true, nil
 }
