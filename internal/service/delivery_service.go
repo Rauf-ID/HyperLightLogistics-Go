@@ -19,16 +19,14 @@
 
 package service
 
-import "HyperLightLogistics-Go/internal/service/transport"
+import (
+	"HyperLightLogistics-Go/internal/service/proto"
+	"HyperLightLogistics-Go/internal/service/transport"
+	"log"
+)
 
 type DeliveryService struct {
 	DroneService *transport.DroneService
-}
-
-type DeliveryOption struct {
-	Type         string
-	DeliveryTime string
-	Price        float64
 }
 
 func NewDeliveryService(droneService *transport.DroneService) *DeliveryService {
@@ -37,8 +35,16 @@ func NewDeliveryService(droneService *transport.DroneService) *DeliveryService {
 	}
 }
 
-func (d *DeliveryService) GetAvailableDeliveryOptions(distance float64, productInfo *ProductInfo) ([]DeliveryOption, error) {
-	d.DroneService.CheckDroneAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
+func (d *DeliveryService) GetAvailableDeliveryOptions(distance float64, productInfo *ProductInfo) ([]*proto.DeliveryOptions, error) {
+	var deliveryOptions []*proto.DeliveryOptions
 
-	return nil, nil
+	available, err := d.DroneService.CheckDroneAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
+	if available && err == nil {
+		log.Println("Ok")
+		deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{Type: "Drone Delivery", Price: 1.5, DeliveryTime: "8:00 AM to 3:00 PM"})
+	} else {
+		log.Println("Not Ok: ", err)
+	}
+
+	return deliveryOptions, nil
 }

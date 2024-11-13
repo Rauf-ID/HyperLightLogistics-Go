@@ -42,6 +42,7 @@ type DeliveryOptionsServer struct {
 }
 
 func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
+	var productDeliveryOptions []*proto.ProductDeliveryOptions
 
 	clientLon, clientLat, err := s.GeocodingService.GetCoordinates(req.DeliveryAddress)
 	if err != nil {
@@ -74,33 +75,16 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 			return nil, err
 		}
 
-		s.DeliveryService.GetAvailableDeliveryOptions(distance, productInfo)
-
+		deliveryOp, err := s.DeliveryService.GetAvailableDeliveryOptions(distance, productInfo)
+		if err != nil {
+			return nil, err
+		}
+		productDeliveryOptions = append(productDeliveryOptions, &proto.ProductDeliveryOptions{ProductId: productId, DeliveryOptions: deliveryOp})
 	}
-
-	deliveryOptions := calculateDeliveryRoutes()
 
 	return &proto.DeliveryResponse{
 		Products: productDeliveryOptions,
 	}, nil
-}
-
-func calculateDeliveryRoutes() []*proto.DeliveryOptions {
-	var deliveryOptions []*proto.DeliveryOptions
-
-	deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{
-		Type:         "Standard",
-		DeliveryTime: "3-5 days",
-		Price:        5.99,
-	})
-
-	deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{
-		Type:         "Expedited",
-		DeliveryTime: "1-3 days",
-		Price:        15.99,
-	})
-
-	return deliveryOptions
 }
 
 func main() {
