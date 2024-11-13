@@ -81,7 +81,7 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 	deliveryOptions := calculateDeliveryRoutes()
 
 	return &proto.DeliveryResponse{
-		DeliveryOptions: deliveryOptions,
+		Products: productDeliveryOptions,
 	}, nil
 }
 

@@ -53,6 +53,11 @@ message DeliveryOptions {
     double price = 3;
 }
 
+message ProductDeliveryOptions {
+    uint64 productId = 1;
+    repeated DeliveryOptions deliveryOptions = 2;
+}
+
 message DeliveryResponse {
-    repeated DeliveryOptions deliveryOptions = 1;
+    repeated ProductDeliveryOptions products = 1;
 }
