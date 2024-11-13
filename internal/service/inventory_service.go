@@ -89,7 +89,7 @@ func (s *InventoryService) GetProductInfo(productId uint64) (*ProductInfo, error
 	row := s.DB.Conn.QueryRow(context.Background(), query, productId)
 
 	var product ProductInfo
-	err := row.Scan(&product.ProductID, &product.Height, &product.Length, &product.Weight)
+	err := row.Scan(&product.ProductID, &product.Height, &product.Length, &product.Width, &product.Weight)
 	if err != nil {
 		return nil, err
 	}
