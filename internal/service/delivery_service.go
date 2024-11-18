@@ -26,12 +26,19 @@ import (
 )
 
 type DeliveryService struct {
-	DroneService *transport.DroneService
+	DroneService  *transport.DroneService
+	VanService    *transport.VanService
+	TruckService  *transport.TruckService
+	FlightService *transport.FlightService
 }
 
-func NewDeliveryService(droneService *transport.DroneService) *DeliveryService {
+func NewDeliveryService(droneService *transport.DroneService, vanService *transport.VanService,
+	truckService *transport.TruckService, flightService *transport.FlightService) *DeliveryService {
 	return &DeliveryService{
-		DroneService: droneService,
+		DroneService:  droneService,
+		VanService:    vanService,
+		TruckService:  truckService,
+		FlightService: flightService,
 	}
 }
 

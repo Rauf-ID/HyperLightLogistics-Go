@@ -49,19 +49,12 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 		return nil, fmt.Errorf("failed to get coordinates: %v", err)
 	}
 
-	log.Println(clientLat, clientLon)
-
 	for _, product := range req.Products {
 		productId := product.ProductId
 
 		warehouses, err := s.InventoryService.GetWarehousesInfoByProduct(productId)
 		if err != nil {
 			return nil, err
-		}
-
-		for _, warehouse := range warehouses {
-			log.Printf("Warehouse was found: %d with quantity: %d warehouse location: %s latitude: %f longitude: %f",
-				warehouse.WarehouseID, warehouse.Quantity, warehouse.Location, warehouse.Latitude, warehouse.Longitude)
 		}
 
 		closestWarehouse, distance, err := s.RouteService.CalculateDistance(clientLon, clientLat, warehouses)
@@ -79,6 +72,7 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 		if err != nil {
 			return nil, err
 		}
+
 		productDeliveryOptions = append(productDeliveryOptions, &proto.ProductDeliveryOptions{ProductId: productId, DeliveryOptions: deliveryOp})
 	}
 
@@ -102,8 +96,12 @@ func main() {
 	inventoryService := service.NewInventoryService(db)
 	routeService := service.NewRouteService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 	geocodingService := service.NewGeocodingService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
+
 	droneService := transport.NewDroneService()
-	deliveryService := service.NewDeliveryService(droneService)
+	vanService := transport.NewVanService()
+	truckService := transport.NewTruckService()
+	flightService := transport.NewFlightService()
+	deliveryService := service.NewDeliveryService(droneService, vanService, truckService, flightService)
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
