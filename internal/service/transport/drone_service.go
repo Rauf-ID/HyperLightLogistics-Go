@@ -19,7 +19,10 @@
 
 package transport
 
-import "errors"
+import (
+	"HyperLightLogistics-Go/internal/service/proto"
+	"errors"
+)
 
 type DroneService struct {
 }
@@ -28,9 +31,17 @@ func NewDroneService() *DroneService {
 	return &DroneService{}
 }
 
-func (d *DroneService) CheckDroneAvailability(distance float64, height, length, width, weight float32) (bool, error) {
+func (d *DroneService) CheckAvailability(distance float64, height, length, width, weight float32) (bool, error) {
 	if distance >= 16000 || height > 5.0 || length > 5.0 || width > 5.0 || weight > 10.0 {
 		return false, errors.New("product exceeds allowable drone limits for distance, size, or weight")
 	}
 	return true, nil
+}
+
+func (d *DroneService) GetDeliveryOption() *proto.DeliveryOptions {
+	return &proto.DeliveryOptions{
+		Type:         "Drone Delivery",
+		Price:        1.5,
+		DeliveryTime: "8:00 AM to 3:00 PM",
+	}
 }

@@ -45,37 +45,18 @@ func NewDeliveryService(droneService *transport.DroneService, vanService *transp
 func (d *DeliveryService) GetAvailableDeliveryOptions(distance float64, productInfo *ProductInfo) ([]*proto.DeliveryOptions, error) {
 	var deliveryOptions []*proto.DeliveryOptions
 
-	droneAvailable, err := d.DroneService.CheckDroneAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
-	if droneAvailable && err == nil {
-		log.Println("Ok")
-		deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{Type: "Drone Delivery", Price: 1.5, DeliveryTime: "8:00 AM to 3:00 PM"})
-	} else {
-		log.Println("Not Ok: ", err)
+	transportServices := []transport.TransportService{
+		d.DroneService, d.VanService,
+		d.TruckService, d.FlightService,
 	}
 
-	vanAvailable, err := d.VanService.CheckVanAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
-	if vanAvailable && err == nil {
-		log.Println("Ok")
-		deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{Type: "Van Delivery", Price: 1.5, DeliveryTime: "8:00 AM to 3:00 PM"})
-	} else {
-		log.Println("Not Ok: ", err)
-	}
-
-	if distance >= 16000 {
-		truckAvailable, err := d.TruckService.CheckTruckAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
-		if truckAvailable && err == nil {
+	for _, service := range transportServices {
+		available, err := service.CheckAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
+		if available && err == nil {
+			deliveryOptions = append(deliveryOptions, service.GetDeliveryOption())
 			log.Println("Ok")
-			deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{Type: "Truck Delivery", Price: 1.5, DeliveryTime: "8:00 AM to 3:00 PM"})
 		} else {
-			log.Println("Not Ok: ", err)
-		}
-
-		flightAvailable, err := d.FlightService.CheckFlightAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
-		if flightAvailable && err == nil {
-			log.Println("Ok")
-			deliveryOptions = append(deliveryOptions, &proto.DeliveryOptions{Type: "Flight Delivery", Price: 1.5, DeliveryTime: "8:00 AM to 3:00 PM"})
-		} else {
-			log.Println("Not Ok: ", err)
+			log.Println("Not Available: ", err)
 		}
 	}
 
