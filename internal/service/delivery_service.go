@@ -42,7 +42,7 @@ func NewDeliveryService(droneService *transport.DroneService, vanService *transp
 	}
 }
 
-func (d *DeliveryService) GetAvailableDeliveryOptions(distance float64, productInfo *ProductInfo) ([]*proto.DeliveryOptions, error) {
+func (d *DeliveryService) GetAvailableDeliveryOptions(warehouseInfo *WarehouseInfo, distance float64, productInfo *ProductInfo) ([]*proto.DeliveryOptions, error) {
 	var deliveryOptions []*proto.DeliveryOptions
 
 	transportServices := []transport.TransportService{
@@ -51,7 +51,7 @@ func (d *DeliveryService) GetAvailableDeliveryOptions(distance float64, productI
 	}
 
 	for _, service := range transportServices {
-		available, err := service.CheckAvailability(distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
+		available, err := service.CheckAvailability(warehouseInfo.WarehouseID, distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
 		if available && err == nil {
 			deliveryOptions = append(deliveryOptions, service.GetDeliveryOption())
 			log.Println("Ok")

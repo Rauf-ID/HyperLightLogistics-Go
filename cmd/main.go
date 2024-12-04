@@ -61,14 +61,13 @@ func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req
 		if err != nil {
 			return nil, err
 		}
-		_ = closestWarehouse
 
 		productInfo, err := s.InventoryService.GetProductInfo(productId)
 		if err != nil {
 			return nil, err
 		}
 
-		deliveryOp, err := s.DeliveryService.GetAvailableDeliveryOptions(distance, productInfo)
+		deliveryOp, err := s.DeliveryService.GetAvailableDeliveryOptions(closestWarehouse, distance, productInfo)
 		if err != nil {
 			return nil, err
 		}

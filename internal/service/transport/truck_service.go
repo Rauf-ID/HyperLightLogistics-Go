@@ -31,8 +31,8 @@ func NewTruckService() *TruckService {
 	return &TruckService{}
 }
 
-func (d *TruckService) CheckAvailability(distance float64, height, length, width, weight float32) (bool, error) {
-	if distance >= 50000 || height > 5.0 || length > 5.0 || width > 5.0 || weight > 10.0 {
+func (d *TruckService) CheckAvailability(warehouseID int64, distance float64, height, length, width, weight float32) (bool, error) {
+	if distance <= 50000 || height > 5.0 || length > 5.0 || width > 5.0 || weight > 10.0 {
 		return false, errors.New("product exceeds allowable drone limits for distance, size, or weight")
 	}
 	return true, nil
