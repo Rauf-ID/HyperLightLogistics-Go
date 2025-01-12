@@ -97,7 +97,7 @@ func main() {
 	geocodingService := service.NewGeocodingService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 
 	droneService := transport.NewDroneService(db)
-	vanService := transport.NewVanService()
+	vanService := transport.NewVanService(db)
 	truckService := transport.NewTruckService()
 	flightService := transport.NewFlightService()
 	deliveryService := service.NewDeliveryService(droneService, vanService, truckService, flightService)
