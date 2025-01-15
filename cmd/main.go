@@ -98,8 +98,8 @@ func main() {
 
 	droneService := transport.NewDroneService(db)
 	vanService := transport.NewVanService(db)
-	truckService := transport.NewTruckService()
-	flightService := transport.NewFlightService()
+	truckService := transport.NewTruckService(db)
+	flightService := transport.NewFlightService(db)
 	deliveryService := service.NewDeliveryService(droneService, vanService, truckService, flightService)
 
 	lis, err := net.Listen("tcp", ":50051")

@@ -20,21 +20,50 @@
 package transport
 
 import (
+	"HyperLightLogistics-Go/internal/db"
 	"HyperLightLogistics-Go/internal/service/proto"
+	"context"
 	"errors"
+	"log"
+	"time"
 )
 
 type TruckService struct {
+	DB *db.PostgresDB
 }
 
-func NewTruckService() *TruckService {
-	return &TruckService{}
+func NewTruckService(db *db.PostgresDB) *TruckService {
+	return &TruckService{DB: db}
 }
 
 func (d *TruckService) CheckAvailability(warehouseID int64, distance float64, height, length, width, weight float32) (bool, error) {
 	if distance <= 50000 || height > 5.0 || length > 5.0 || width > 5.0 || weight > 10.0 {
-		return false, errors.New("product exceeds allowable drone limits for distance, size, or weight")
+		return false, errors.New("product exceeds allowable truck limits for distance, size, or weight")
 	}
+
+	query := `
+		SELECT id, capacity, load, next_available_time, status
+		FROM trucks
+		WHERE warehouse_id = $1 and status = 'available' and capacity >= $2 and next_available_time <= $3
+		ORDER BY next_available_time ASC
+		LIMIT 1
+	`
+
+	now := time.Now()
+	row := d.DB.Conn.QueryRow(context.Background(), query, warehouseID, weight, now)
+
+	var id int64
+	var capacity, load float32
+	var nextAvailableTime time.Time
+	var status string
+
+	err := row.Scan(&id, &capacity, &load, &nextAvailableTime, &status)
+	if err != nil {
+		log.Println("No suitable trucks available:", err)
+		return false, errors.New("no suitable trucks available")
+	}
+
+	log.Printf("Truck %d is available with capacity %.2f\n", id, capacity)
 	return true, nil
 }
 

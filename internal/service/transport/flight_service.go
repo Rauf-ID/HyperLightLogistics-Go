@@ -20,21 +20,50 @@
 package transport
 
 import (
+	"HyperLightLogistics-Go/internal/db"
 	"HyperLightLogistics-Go/internal/service/proto"
+	"context"
 	"errors"
+	"log"
+	"time"
 )
 
 type FlightService struct {
+	DB *db.PostgresDB
 }
 
-func NewFlightService() *FlightService {
-	return &FlightService{}
+func NewFlightService(db *db.PostgresDB) *FlightService {
+	return &FlightService{DB: db}
 }
 
 func (d *FlightService) CheckAvailability(warehouseID int64, distance float64, height, length, width, weight float32) (bool, error) {
 	if distance <= 50000 || height > 5.0 || length > 5.0 || width > 5.0 || weight > 10.0 {
-		return false, errors.New("product exceeds allowable drone limits for distance, size, or weight")
+		return false, errors.New("product exceeds allowable flight limits for distance, size, or weight")
 	}
+
+	query := `
+		SELECT id, origin_airport_id, destination_airport_id, status, departure_time, arrival_time, capacity, load
+		FROM flights
+		WHERE status = 'available' and capacity >= $1 and departure_time > $2
+		ORDER BY next_available_time ASC
+		LIMIT 1
+	`
+
+	now := time.Now()
+	row := d.DB.Conn.QueryRow(context.Background(), query, weight, now)
+
+	var id int64
+	var capacity, load float32
+	var arrival_time, departure_time time.Time
+	var origin_airport_id, destination_airport_id, status string
+
+	err := row.Scan(&id, &origin_airport_id, &destination_airport_id, &status, &departure_time, &arrival_time, &capacity, &load)
+	if err != nil {
+		log.Println("No suitable flights available:", err)
+		return false, errors.New("no suitable flights available")
+	}
+
+	log.Printf("Flight %d is available with capacity %.2f\n", id, capacity)
 	return true, nil
 }
 
