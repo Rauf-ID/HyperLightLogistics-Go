@@ -22,35 +22,80 @@ package service
 import (
 	"HyperLightLogistics-Go/internal/service/proto"
 	"HyperLightLogistics-Go/internal/service/transport"
+	"context"
+	"fmt"
 	"log"
 )
 
-type DeliveryService struct {
-	DroneService  *transport.DroneService
-	VanService    *transport.VanService
-	TruckService  *transport.TruckService
-	FlightService *transport.FlightService
+type DeliveryOptionsServer struct {
+	proto.UnimplementedDeliveryOptionsServiceServer
+	DeliveryService *DeliveryService
 }
 
-func NewDeliveryService(droneService *transport.DroneService, vanService *transport.VanService,
-	truckService *transport.TruckService, flightService *transport.FlightService) *DeliveryService {
+type DeliveryService struct {
+	TransportServices []transport.TransportService
+	InventoryService  *InventoryService
+	GeocodingService  *GeocodingService
+	RouteService      *RouteService
+}
+
+func NewDeliveryService(
+	transportServices []transport.TransportService,
+	inventoryService *InventoryService,
+	geocodingService *GeocodingService,
+	routeService *RouteService,
+) *DeliveryService {
 	return &DeliveryService{
-		DroneService:  droneService,
-		VanService:    vanService,
-		TruckService:  truckService,
-		FlightService: flightService,
+		TransportServices: transportServices,
+		InventoryService:  inventoryService,
+		GeocodingService:  geocodingService,
+		RouteService:      routeService,
 	}
+}
+
+func (s *DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
+	var productDeliveryOptions []*proto.ProductDeliveryOptions
+
+	clientLon, clientLat, err := s.DeliveryService.GeocodingService.GetCoordinates(req.DeliveryAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get coordinates: %v", err)
+	}
+
+	for _, product := range req.Products {
+		productId := product.ProductId
+
+		warehouses, err := s.DeliveryService.InventoryService.GetWarehousesInfoByProduct(productId)
+		if err != nil {
+			return nil, err
+		}
+
+		closestWarehouse, distance, err := s.DeliveryService.RouteService.CalculateDistance(clientLon, clientLat, warehouses)
+		if err != nil {
+			return nil, err
+		}
+
+		productInfo, err := s.DeliveryService.InventoryService.GetProductInfo(productId)
+		if err != nil {
+			return nil, err
+		}
+
+		deliveryOp, err := s.DeliveryService.GetAvailableDeliveryOptions(closestWarehouse, distance, productInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		productDeliveryOptions = append(productDeliveryOptions, &proto.ProductDeliveryOptions{ProductId: productId, DeliveryOptions: deliveryOp})
+	}
+
+	return &proto.DeliveryResponse{
+		Products: productDeliveryOptions,
+	}, nil
 }
 
 func (d *DeliveryService) GetAvailableDeliveryOptions(warehouseInfo *WarehouseInfo, distance float64, productInfo *ProductInfo) ([]*proto.DeliveryOptions, error) {
 	var deliveryOptions []*proto.DeliveryOptions
 
-	transportServices := []transport.TransportService{
-		d.DroneService, d.VanService,
-		d.TruckService, d.FlightService,
-	}
-
-	for _, service := range transportServices {
+	for _, service := range d.TransportServices {
 		available, err := service.CheckAvailability(warehouseInfo.WarehouseID, distance, productInfo.Height, productInfo.Length, productInfo.Width, productInfo.Weight)
 		if available && err == nil {
 			deliveryOptions = append(deliveryOptions, service.GetDeliveryOption())
@@ -62,3 +107,5 @@ func (d *DeliveryService) GetAvailableDeliveryOptions(warehouseInfo *WarehouseIn
 
 	return deliveryOptions, nil
 }
+
+func (d *DeliveryService) DeliveryInitialization() {}

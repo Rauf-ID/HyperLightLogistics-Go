@@ -25,60 +25,11 @@ import (
 	"HyperLightLogistics-Go/internal/service"
 	proto "HyperLightLogistics-Go/internal/service/proto"
 	"HyperLightLogistics-Go/internal/service/transport"
-	"context"
-	"fmt"
 	"log"
 	"net"
 
 	"google.golang.org/grpc"
 )
-
-type DeliveryOptionsServer struct {
-	proto.UnimplementedDeliveryOptionsServiceServer
-	InventoryService *service.InventoryService
-	RouteService     *service.RouteService
-	GeocodingService *service.GeocodingService
-	DeliveryService  *service.DeliveryService
-}
-
-func (s DeliveryOptionsServer) CalculateDeliveryOptions(ctx context.Context, req *proto.DeliveryRequest) (*proto.DeliveryResponse, error) {
-	var productDeliveryOptions []*proto.ProductDeliveryOptions
-
-	clientLon, clientLat, err := s.GeocodingService.GetCoordinates(req.DeliveryAddress)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get coordinates: %v", err)
-	}
-
-	for _, product := range req.Products {
-		productId := product.ProductId
-
-		warehouses, err := s.InventoryService.GetWarehousesInfoByProduct(productId)
-		if err != nil {
-			return nil, err
-		}
-
-		closestWarehouse, distance, err := s.RouteService.CalculateDistance(clientLon, clientLat, warehouses)
-		if err != nil {
-			return nil, err
-		}
-
-		productInfo, err := s.InventoryService.GetProductInfo(productId)
-		if err != nil {
-			return nil, err
-		}
-
-		deliveryOp, err := s.DeliveryService.GetAvailableDeliveryOptions(closestWarehouse, distance, productInfo)
-		if err != nil {
-			return nil, err
-		}
-
-		productDeliveryOptions = append(productDeliveryOptions, &proto.ProductDeliveryOptions{ProductId: productId, DeliveryOptions: deliveryOp})
-	}
-
-	return &proto.DeliveryResponse{
-		Products: productDeliveryOptions,
-	}, nil
-}
 
 func main() {
 	cfg, err := config.LoadConfig("../config.yaml")
@@ -96,11 +47,14 @@ func main() {
 	routeService := service.NewRouteService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 	geocodingService := service.NewGeocodingService(cfg.OpenRouteService.OpenRouteServiceAPIKey)
 
-	droneService := transport.NewDroneService(db)
-	vanService := transport.NewVanService(db)
-	truckService := transport.NewTruckService(db)
-	flightService := transport.NewFlightService(db)
-	deliveryService := service.NewDeliveryService(droneService, vanService, truckService, flightService)
+	transportServices := []transport.TransportService{
+		transport.NewDroneService(db),
+		transport.NewVanService(db),
+		transport.NewTruckService(db),
+		transport.NewFlightService(db),
+	}
+
+	deliveryService := service.NewDeliveryService(transportServices, inventoryService, geocodingService, routeService)
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -108,11 +62,8 @@ func main() {
 	}
 
 	serverRegistrar := grpc.NewServer()
-	service := &DeliveryOptionsServer{
-		InventoryService: inventoryService,
-		RouteService:     routeService,
-		GeocodingService: geocodingService,
-		DeliveryService:  deliveryService,
+	service := &service.DeliveryOptionsServer{
+		DeliveryService: deliveryService,
 	}
 	proto.RegisterDeliveryOptionsServiceServer(serverRegistrar, service)
 
