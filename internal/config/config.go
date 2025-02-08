@@ -25,6 +25,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type KafkaConfig struct {
+	Brokers []string `yaml:"brokers"`
+	GroupID string   `yaml:"group_id"`
+	Topic   string   `yaml:"topic"`
+}
+
 type DatabaseConfig struct {
 	Host     string `yaml:"host"`
 	Port     string `yaml:"port"`
@@ -40,6 +46,7 @@ type OpenRouteServiceConfig struct {
 type Config struct {
 	Database         DatabaseConfig         `yaml:"database"`
 	OpenRouteService OpenRouteServiceConfig `yaml:"openrouteservice"`
+	Kafka            KafkaConfig            `yaml:"kafka"`
 }
 
 func LoadConfig(path string) (*Config, error) {

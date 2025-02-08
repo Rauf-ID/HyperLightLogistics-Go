@@ -108,4 +108,8 @@ func (d *DeliveryService) GetAvailableDeliveryOptions(warehouseInfo *WarehouseIn
 	return deliveryOptions, nil
 }
 
-func (d *DeliveryService) DeliveryInitialization() {}
+func (d *DeliveryService) DeliveryInitialization(msg []byte) error {
+	log.Println("Ok I'm good!")
+	log.Println(msg)
+	return nil
+}

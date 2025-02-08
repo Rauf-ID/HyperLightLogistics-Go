@@ -25,6 +25,8 @@ import (
 	"HyperLightLogistics-Go/internal/service"
 	proto "HyperLightLogistics-Go/internal/service/proto"
 	"HyperLightLogistics-Go/internal/service/transport"
+	"HyperLightLogistics-Go/kafka"
+	"context"
 	"log"
 	"net"
 
@@ -55,6 +57,15 @@ func main() {
 	}
 
 	deliveryService := service.NewDeliveryService(transportServices, inventoryService, geocodingService, routeService)
+
+	kafkaConsumer, err := kafka.NewKafkaConsumer(cfg.Kafka.Brokers, cfg.Kafka.GroupID, cfg.Kafka.Topic, deliveryService)
+	if err != nil {
+		log.Fatalf("Failed to create Kafka consumer: %s", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go kafkaConsumer.StartConsuming(ctx)
 
 	lis, err := net.Listen("tcp", ":50051")
 	if err != nil {

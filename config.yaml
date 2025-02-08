@@ -5,5 +5,13 @@ database:
   password: "pass"
   dbname: "hyperlightlogistics"
 
+kafka:
+  brokers:
+    - "localhost:9091"
+    - "localhost:9092"
+    - "localhost:9093"
+  group_id: "delivery-group"
+  topic: "delivery-initiation-topic"
+
 openrouteservice:
   api_key: "your_api_key"
